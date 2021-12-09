@@ -59,6 +59,9 @@ class SimulationParameters :
 
     ###  Infection Parameters  ##########################################################
     
+    # Variants (dict)
+    startingVariantMix = { 'delta': 0.75, 'omicron': 0.05, 'beta':0.17, 'alpha':0.03}
+    
     # The rate of people who are infected but do not show symptoms.
     # TODO:  This is sampled in both Actor and Infection, but never used to control behavior
     asymptomaticRate = 0.2
@@ -214,7 +217,7 @@ class Simulation:
                 * activity
                 * duration / 0.0104
         ):
-            susceptible.infect()
+            susceptible.infect(infected.myInfection.variant)
             return True
 
         return False
@@ -254,12 +257,14 @@ class Simulation:
     def checkExposure(self, actor, other, duration=0.0104, activity=ACTIVITY.NORMAL):
         if (self.hasBeenExposed(other, actor)):
             # print((actor.id, 'infects', other.id)
-            other.infect()
+            # TODO:  Has the infection already been performed by hasBeenExposed()?
+            other.infect(actor.myInfection.variant)
             return True
 
         if (self.hasBeenExposed(actor, other)):
             # print((other.id, 'infects', actor.id)
-            actor.infect()
+            # TODO:  Has the infection already been performed by hasBeenExposed()?
+            actor.infect(other.myInfection.variant)
             return True
 
         return False

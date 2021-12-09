@@ -4,7 +4,7 @@ from util import gaussianRandom
 
 class Infection:
 
-    def __init__(self, actor):
+    def __init__(self, actor, variant = None):
         # The actor who is infected
         self.myActor = actor
 
@@ -17,6 +17,17 @@ class Infection:
 
         # TODO: Sample these values in the future!
         params = self.myActor.simulationParameters
+        
+        # Assign variant
+        if variant is not None:
+            self.variant = variant
+        else:
+            rnd = random.random()
+            for v, pct in params.startingVariantMix.items():
+                rnd -= pct
+                if rnd <= 0:
+                    self.variant = v
+                    break
 
         # Whether this infection will be asymptomatic. Sampled for this actor.
         self.asymptomatic = (random.random() < self.myActor.simulationParameters.asymptomaticRate)

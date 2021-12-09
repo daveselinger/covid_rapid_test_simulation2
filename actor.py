@@ -104,12 +104,12 @@ class Actor:
 
     # Infect the individual. Starts as EXPOSED.
 
-    def infect(self):
+    def infect(self, variant = None):
         self.infectedTime = 0
         self.status = ACTOR_STATUS.EXPOSED
         self.isAsymptomatic = random.random() < self.simulationParameters.asymptomaticRate
         self.willSelfIsolate = random.random() < self.simulationParameters.selfIsolationRate
-        self.myInfection = Infection(self)
+        self.myInfection = Infection(self, variant = variant)
 
     def vaccinate(self):
         self.isVaccinated = True

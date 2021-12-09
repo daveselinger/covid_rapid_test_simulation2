@@ -7,6 +7,13 @@ from util import gaussianRandom
 
 @dataclass
 class SimulationParameters :
+    # Population is made up of People.
+    # People are called Actors.  
+    # Actors have Interactions with other Actors.  
+    # Interactions may lead to Exposures/Infections.
+    # Testing is either Rapid antigen or PCR
+
+    ###  Population Parameters  ##########################################################
 
     # Starting Population size (Int)
     populationSize = 10000
@@ -14,13 +21,96 @@ class SimulationParameters :
     # Starting infected rate (Float, 0-1)
     startingInfectionRate = 0.004
 
+    # Mean/STD of # of interactions per day
+    numInteractions = 2.5
+    numInteractionsSTD = 1.0
+
+    # % of positives that will quarantine effectively (after positive test).
+    positiveQuarantineRate = 0.9
+
+    # isolation after positive test or self isolation
+    positiveTestIsolationInterval = 21
+
+    # Daily Vacination rate
+    vaccinationRate = 0.0035
+
+    # Vaccination delay
+    vaccinationDelay = 28
+
+    # Vaccination effectiveness
+    vaccinationEfficacy = 0.95
+
+    # Non compliance rate
+    # TODO: This parameter is sampled and assigned to actors, but never actively used
+    nonCompliantRate = 0.0
+
+    # constructor(props =:) {
+    #     Object.assign(this, props)
+    #
+
+    ###  Interation Parameters  ##########################################################
+
+    # Mean/STD of transmission per interaction
+    # TODO:  Only mean is used currently
+    transmissionRate = 0.05
+    transmissionRateSTD = 0.1
+    
+    # TODO: Contact tracing parameters go here
+
+    ###  Infection Parameters  ##########################################################
+    
+    # The rate of people who are infected but do not show symptoms.
+    # TODO:  This is sampled in both Actor and Infection, but never used to control behavior
+    asymptomaticRate = 0.2
+
+    # % of symptomatic that will self isolate if symptomatic.
+    # TODO: This parameter is sampled and assigned to actors, but never actively used
+    selfIsolationRate = 0.0
+
+    # Days to contagious (int)
+    daysToContagious = 2.5
+    daysToContagiousSTD = 0.5
+
+    # Days to Recovery
+    daysToRecovery = 10
+    daysToRecoverySTD = 4
+
+    # Days to symptos (Float)
+    daysToSymptoms = 5.5
+    daysToSymptomsSTD = 2
+
+    # days_to_pcr detectable. Sampled for this actor.
+    daysToPcrDetectable = 2
+    daysToPcrDetectableSTD = 0.5
+
+    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
+    durationDaysOfPcrDetection = 24
+    durationDaysOfPcrDetectionSTD = 7
+
+    # days until the rapid test will detect. Sampled for this actor.
+    daysToAntigenDetectable = 3
+    daysToAntigenDetectableSTD = 1
+
+    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
+    durationDaysOfAntigenDetection = 10
+    durationDaysOfAntigenDetectionSTD = 3
+
+    # Mortality rate (Float, 0-1)
+    mortalityRate = 0.01
+
+    # Recovered Resistance (%, as a probability?)
+    # NOT CURRENTLY USED
+    recoveredResistance = 0.98
+
+    ###  Rapid Testing Parameters  ##########################################################
+
     # Testing interval: Start out with every 3 days (Float: 0-100.0)
     testingInterval = 3.0
 
     # Testing rate
     testingRate = 0.6
 
-    # Testing rate
+    # Random rapid testing rate
     testingRateRandom = 0.0
 
     # False positive % (Float, 0-1)
@@ -29,51 +119,7 @@ class SimulationParameters :
     # False negative % (Float, 01)
     falseNegative = 0.02
 
-    # % of symptomatic that will self isolate if symptomatic.
-    selfIsolationRate = 0.0
-
-    # % of positives that will quarantine effectively (after positive test).
-    positiveQuarantineRate = 0.9
-
-    # isolation after positive test or self isolation
-    positiveTestIsolationInterval = 21
-
-    # Days to contagious (int)
-    daysToContagious = 2.5
-    daysToContagiousSTD = 0.5
-
-    # Days to detectable (Float)
-    daysToDetectable = 2.5
-    daysToDetectableSTD = 0.5
-
-    # Days to symptos (Float)
-    daysToSymptoms = 5.5
-    daysToSymptomsSTD = 2
-
-    # Days to Recovery
-    daysToRecovery = 10
-    daysToRecoverySTD = 4
-
-    # Mortality rate (Float, 0-1)
-    mortalityRate = 0.01
-
-    # The rate of people who are infected but do not show symptoms.
-    asymptomaticRate = 0.2
-
-    # Recovered Resistance (%, as a probability?)
-    recoveredResistance = 0.98
-
-    # Mean/STD of # of interactions per day
-    numInteractions = 2.5
-
-    #
-    numInteractionsSTD = 1.0
-
-    # Mean/STD of transmission per interaction
-    transmissionRate = 0.05
-
-    #
-    transmissionRateSTD = 0.1
+    ###  PCR Testing Parameters  ##########################################################
 
     # Testing rate PCR
     testingRatePcr = 0.000
@@ -90,40 +136,14 @@ class SimulationParameters :
     # False negative % for PCR (Float, 01)
     falseNegativePcr = 0.02
 
-    # constructor(props =:) {
-    #     Object.assign(this, props)
-    #
-
-    # days_to_pcr detectable. Sampled for this actor.
-    daysToPcrDetectable = 2
-    daysToPcrDetectableSTD = 0.5
-
-    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
-    durationDaysOfPcrDetection = 24
-    durationDaysOfPcrDetectionSTD = 7
-
     # The delay from PCR test to results. Isolation is delayed by this ammount
     daysToPcrResults = 1.5
 
-    # days until the rapid test will detect. Sampled for this actor.
-    daysToAntigenDetectable = 3
-    daysToAntigenDetectableSTD = 1
 
-    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
-    durationDaysOfAntigenDetection = 10
-    durationDaysOfAntigenDetectionSTD = 3
-
-    # Daily Vacination rate
-    vaccinationRate = 0.0035
-
-    # Vaccination delay
-    vaccinationDelay = 28
-
-    # Vaccination effectiveness
-    vaccinationEfficacy = 0.95
-
-    # Non compliance rate
-    nonCompliantRate = 0.0
+    # Days to detectable (Float)
+    # NOT CURRENTLY USED
+    daysToDetectable = 2.5
+    daysToDetectableSTD = 0.5
 
 # Activity is a risk modifier. 1.0 is normal, 0.0 is safe, >1.0 is risky
 @dataclass

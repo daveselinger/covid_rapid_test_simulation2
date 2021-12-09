@@ -1,0 +1,6 @@
+name: covid_rapid_test_ebmlgrp
+dependencies:
+  - python>=3.10
+  - pip
+  - pip:
+    - scipy

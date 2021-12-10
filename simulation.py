@@ -50,60 +50,17 @@ class SimulationParameters :
 
     ###  Interation Parameters  ##########################################################
 
-    # Mean/STD of transmission per interaction
-    # TODO:  Only mean is used currently
-    transmissionRate = 0.05
-    transmissionRateSTD = 0.1
-    
     # TODO: Contact tracing parameters go here
 
     ###  Infection Parameters  ##########################################################
     
     # Variants (dict)
+    # This dict should contain all variants in the simulation.  
+    # Use a zero probability for any variants not present at the start
     startingVariantMix = { 'delta': 0.75, 'omicron': 0.05, 'beta':0.17, 'alpha':0.03}
-    
-    # The rate of people who are infected but do not show symptoms.
-    # TODO:  This is sampled in both Actor and Infection, but never used to control behavior
-    asymptomaticRate = 0.2
 
-    # % of symptomatic that will self isolate if symptomatic.
-    # TODO: This parameter is sampled and assigned to actors, but never actively used
-    selfIsolationRate = 0.0
-
-    # Days to contagious (int)
-    daysToContagious = 2.5
-    daysToContagiousSTD = 0.5
-
-    # Days to Recovery
-    daysToRecovery = 10
-    daysToRecoverySTD = 4
-
-    # Days to symptos (Float)
-    daysToSymptoms = 5.5
-    daysToSymptomsSTD = 2
-
-    # days_to_pcr detectable. Sampled for this actor.
-    daysToPcrDetectable = 2
-    daysToPcrDetectableSTD = 0.5
-
-    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
-    durationDaysOfPcrDetection = 24
-    durationDaysOfPcrDetectionSTD = 7
-
-    # days until the rapid test will detect. Sampled for this actor.
-    daysToAntigenDetectable = 3
-    daysToAntigenDetectableSTD = 1
-
-    # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
-    durationDaysOfAntigenDetection = 10
-    durationDaysOfAntigenDetectionSTD = 3
-
-    # Mortality rate (Float, 0-1)
-    mortalityRate = 0.01
-
-    # Recovered Resistance (%, as a probability?)
-    # NOT CURRENTLY USED
-    recoveredResistance = 0.98
+    # The variantParameters dict will get populated later
+    variantParameters = {}
 
     ###  Rapid Testing Parameters  ##########################################################
 
@@ -148,6 +105,65 @@ class SimulationParameters :
     daysToDetectable = 2.5
     daysToDetectableSTD = 0.5
 
+
+class VariantParameters :
+
+    def __init__(self, name = 'Default'):
+        self.name = name
+
+        ###  Interation Parameters  ##########################################################
+
+        # Mean/STD of transmission per interaction
+        # TODO:  Only mean is used currently
+        self.transmissionRate = 0.2
+        self.transmissionRateSTD = 0.1
+        
+        ###  Infection Parameters  ##########################################################
+        
+        # The rate of people who are infected but do not show symptoms.
+        # TODO:  This is sampled in both Actor and Infection, but never used to control behavior
+        self.asymptomaticRate = 0.2
+
+        # % of symptomatic that will self isolate if symptomatic.
+        # TODO: This parameter is sampled and assigned to actors, but never actively used
+        self.selfIsolationRate = 0.0
+
+        # Days to contagious (int)
+        self.daysToContagious = 2.5
+        self.daysToContagiousSTD = 0.5
+
+        # Days to Recovery
+        self.daysToRecovery = 10
+        self.daysToRecoverySTD = 4
+
+        # Days to symptos (Float)
+        self.daysToSymptoms = 5.5
+        self.daysToSymptomsSTD = 2
+
+        # days_to_pcr detectable. Sampled for this actor.
+        self.daysToPcrDetectable = 2
+        self.daysToPcrDetectableSTD = 0.5
+
+        # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
+        self.durationDaysOfPcrDetection = 24
+        self.durationDaysOfPcrDetectionSTD = 7
+
+        # days until the rapid test will detect. Sampled for this actor.
+        self.daysToAntigenDetectable = 3
+        self.daysToAntigenDetectableSTD = 1
+
+        # The duration of virus shedding when antigen detection is positive. Sampled for this actor.
+        self.durationDaysOfAntigenDetection = 10
+        self.durationDaysOfAntigenDetectionSTD = 3
+
+        # Mortality rate (Float, 0-1)
+        self.mortalityRate = 0.01
+
+        # Recovered Resistance (%, as a probability?)
+        # NOT CURRENTLY USED
+        self.recoveredResistance = 0.98
+    
+
 # Activity is a risk modifier. 1.0 is normal, 0.0 is safe, >1.0 is risky
 @dataclass
 class ACTIVITY:
@@ -172,6 +188,8 @@ class Simulation:
         self.totals = RunStatistics()
         self.daysElapsed = 0
 
+        self.setupVariantParameters()
+        
         rows = math.floor(math.sqrt(self.simulationParameters.populationSize))
         for i in range(self.simulationParameters.populationSize):
             a = Actor(self)
@@ -192,6 +210,15 @@ class Simulation:
 
         # The remaining susceptible, after we've created the initially infected
         self.totals.susceptible = self.simulationParameters.populationSize - self.totals.infected
+        
+    def setupVariantParameters(self):
+        # Create a dictionary of variant parameters
+        for v in self.simulationParameters.startingVariantMix:
+            self.simulationParameters.variantParameters[v] = VariantParameters(v)
+            
+        # Customize the parameters for the different variants
+        self.simulationParameters.variantParameters['alpha'].transmissionRate /= 2
+        self.simulationParameters.variantParameters['omicron'].transmissionRate *= 2
 
     # *
     # Models transmission from an infected individual to a susceptible
@@ -212,7 +239,7 @@ class Simulation:
         if (infected.isolated):
             return False
 
-        if (random.random() < self.simulationParameters.transmissionRate
+        if (random.random() < self.simulationParameters.variantParameters[infected.myInfection.variant].transmissionRate
                 * infected.protection
                 * activity
                 * duration / 0.0104

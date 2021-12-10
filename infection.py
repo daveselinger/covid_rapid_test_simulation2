@@ -14,23 +14,23 @@ class Infection:
 
         # Number of days infected
         self.infectedTime = 0
-
-        # TODO: Sample these values in the future!
-        params = self.myActor.simulationParameters
         
         # Assign variant
         if variant is not None:
             self.variant = variant
         else:
             rnd = random.random()
-            for v, pct in params.startingVariantMix.items():
+            for v, pct in self.myActor.simulationParameters.startingVariantMix.items():
                 rnd -= pct
                 if rnd <= 0:
                     self.variant = v
                     break
 
+        # TODO: Sample these values in the future!
+        params = self.myActor.simulationParameters.variantParameters[self.variant]
+
         # Whether this infection will be asymptomatic. Sampled for this actor.
-        self.asymptomatic = (random.random() < self.myActor.simulationParameters.asymptomaticRate)
+        self.asymptomatic = (random.random() < params.asymptomaticRate)
         # The days until contagious. Sampled for this actor.
         self.daysToContagious = gaussianRandom(params.daysToContagious, params.daysToContagiousSTD)
         self.daysToNotContagious = self.daysToContagious + gaussianRandom(

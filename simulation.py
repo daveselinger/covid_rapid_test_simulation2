@@ -105,6 +105,15 @@ class SimulationParameters :
     daysToDetectable = 2.5
     daysToDetectableSTD = 0.5
 
+    def __init__(self):
+        # Create a dictionary of variant parameters
+        for v in self.startingVariantMix:
+            self.variantParameters[v] = VariantParameters(v)
+            
+        # Customize the parameters for the different variants
+        self.variantParameters['alpha'].transmissionRate /= 2
+        self.variantParameters['omicron'].transmissionRate *= 2
+
 
 class VariantParameters :
 
@@ -188,8 +197,6 @@ class Simulation:
         self.totals = RunStatistics()
         self.daysElapsed = 0
 
-        self.setupVariantParameters()
-        
         rows = math.floor(math.sqrt(self.simulationParameters.populationSize))
         for i in range(self.simulationParameters.populationSize):
             a = Actor(self)
@@ -211,15 +218,6 @@ class Simulation:
         # The remaining susceptible, after we've created the initially infected
         self.totals.susceptible = self.simulationParameters.populationSize - self.totals.infected
         
-    def setupVariantParameters(self):
-        # Create a dictionary of variant parameters
-        for v in self.simulationParameters.startingVariantMix:
-            self.simulationParameters.variantParameters[v] = VariantParameters(v)
-            
-        # Customize the parameters for the different variants
-        self.simulationParameters.variantParameters['alpha'].transmissionRate /= 2
-        self.simulationParameters.variantParameters['omicron'].transmissionRate *= 2
-
     # *
     # Models transmission from an infected individual to a susceptible
     # individual.

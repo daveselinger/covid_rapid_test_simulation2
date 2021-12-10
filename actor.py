@@ -105,11 +105,14 @@ class Actor:
     # Infect the individual. Starts as EXPOSED.
 
     def infect(self, variant = None):
+        self.myInfection = Infection(self, variant = variant)
+        if variant is None:
+            variant = self.myInfection.variant
+
         self.infectedTime = 0
         self.status = ACTOR_STATUS.EXPOSED
-        self.isAsymptomatic = random.random() < self.simulationParameters.asymptomaticRate
-        self.willSelfIsolate = random.random() < self.simulationParameters.selfIsolationRate
-        self.myInfection = Infection(self, variant = variant)
+        self.isAsymptomatic = random.random() < self.simulationParameters.variantParameters[variant].asymptomaticRate
+        self.willSelfIsolate = random.random() < self.simulationParameters.variantParameters[variant].selfIsolationRate
 
     def vaccinate(self):
         self.isVaccinated = True
@@ -175,7 +178,7 @@ class Actor:
 
             elif (self.status == ACTOR_STATUS.INFECTIOUS):
                 if (not self.myInfection.isContagious()):
-                    if (random.random() < self.simulationParameters.mortalityRate):
+                    if (random.random() < self.simulationParameters.variantParameters[self.myInfection.variant].mortalityRate):
                         self.status = ACTOR_STATUS.DECEASED
                     else:
                         self.status = ACTOR_STATUS.RECOVERED

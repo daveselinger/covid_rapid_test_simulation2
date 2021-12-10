@@ -13,6 +13,7 @@ class Actor:
         self.infected=False
         self.infectionHistory=[]
         self.transmissionHistory=[]
+        self.id=0
 
     def infect(self,infected,location=None,when=None):
         if infected is None:
@@ -37,6 +38,7 @@ class Activities(Enum):
     External=ActivityType("external",1.0)
     Home=ActivityType("home",1.0)
     Work=ActivityType("work",0.5)
+    WorkB=ActivityType("work",2.5)
     Admin=ActivityType("admin",0.5)
     School=ActivityType("school",1.5)    
     SchoolAdmin=ActivityType("schooladmin",1.5)
@@ -120,8 +122,8 @@ class Simulation:
                 self.locations.append(Location(Activities.School,sigma=100))
                 # assign a teacher
                 teacher=next(aiter)
-                self.locations[-1].addActor(teacher,self.parameters.dayInterval)
-                admin.addActor(teacher,self.parameters.dayInterval)  
+                self.locations[-1].addActor(teacher,self.parameters.dayInterval/2)
+                admin.addActor(teacher,self.parameters.dayInterval/2)  
                 for n in range(max(2,int(self.parameters.schoolClassSizeRV()))):
                     actor=next(kiter)
                     self.locations[-1].addActor(actor,self.parameters.dayInterval)
@@ -133,22 +135,23 @@ class Simulation:
         workgroupCnt=0
         try:
             while True:
-                #create a new work space
+                #create a new work place (collection of workgroup locations)
                 if workgroupCnt <= 0:
                     admin=Location(Activities.Admin)
                     self.locations.append(admin)
                     workgroupCnt=self.parameters.workGroupCntRV()
+
+                # create a new workgroup location
                 workgroupCnt-=1
                 self.locations.append(Location(Activities.Work,sigma=10))
 
                 # assign a manager to group and admin team
                 manager=next(aiter)
-                self.locations[-1].addActor(manager,self.parameters.dayInterval)
-                admin.addActor(manager,self.parameters.dayInterval)  
+                self.locations[-1].addActor(manager,self.parameters.dayInterval/2)
+                admin.addActor(manager,self.parameters.dayInterval/2)  
                 for n in range(max(2,int(self.parameters.workGroupSizeRV()))):
                     actor=next(aiter)
                     self.locations[-1].addActor(actor,self.parameters.dayInterval)
-
         except StopIteration:
             pass
 
@@ -202,7 +205,7 @@ def selftests(simulation):
 
     #randomly infect some actors
 
-    for actor in random.choices(simulation.actors,k=10):
+    for actor in random.choices(simulation.actors,k=1):
         actor.infect(simulation.externalActor,simulation.externalLocation)
         print(f"Infect {actor.id}")
 
@@ -221,5 +224,6 @@ def selftests(simulation):
     transmissionDump(simulation.externalActor)
 
 parameters=SimulationParameters()
+parameters.populationSize=100
 simulation=Simulation(parameters)
 selftests(simulation)

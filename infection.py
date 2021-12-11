@@ -50,6 +50,8 @@ class Infection:
         self.daysToAntigenNotDetectable = self.daysToAntigenDetectable + gaussianRandom(
             params.durationDaysOfAntigenDetection, params.durationDaysOfAntigenDetectionSTD)
 
+        self.isFatal = (random.random() < params.infectionFatalityRateByAge[self.myActor.ageBracket])
+
     def tick(self, days=1.0):
         self.infectedTime += days
 

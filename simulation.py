@@ -5,6 +5,14 @@ from actor import Actor, ACTOR_STATUS
 from util import gaussianRandom
 
 
+#Demographics
+ageBrackets = [4,17,29,39,49,64,74,84,110]
+usPopulationByAge=[0.047,0.163,0.162,0.136,0.123,0.129,0.101,0.053,0.023]
+
+# approx from Dec 2020. Crude interpolation
+#  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7721859/pdf/10654_2020_Article_698.pdf
+infectionFatalityRateByAge=[0.00004,0.00004,0.00004,0.00068,0.023,0.0775,0.025,0.085,0.283]
+
 @dataclass
 class SimulationParameters :
     # Population is made up of People.

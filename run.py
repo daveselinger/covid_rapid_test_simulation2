@@ -3,7 +3,8 @@ from simulation import SimulationParameters, Simulation
 def run_sim():
     parameters = SimulationParameters()
     parameters.startingInfectionRate=0.01
-    parameters.variantParameters['omicron'].transmissionRate = 0.21
+    parameters.variantParameters["alpha"].transmissionRate*=4
+    parameters.populationSize=1000
     simulation=Simulation(parameters)
     susceptible,infected,recovered,deceased=[],[],[],[]
     for i in range(100):

@@ -122,6 +122,10 @@ class SimulationParameters :
         self.variantParameters['alpha'].transmissionRate /= 2
         self.variantParameters['omicron'].transmissionRate *= 2
 
+        #Demographics
+        self.ageBrackets = [4,17,29,39,49,64,74,84,110]
+        # US population ratios
+        self.populationByAge=[0.047,0.163,0.162,0.136,0.123,0.129,0.101,0.053,0.023]
 
 class VariantParameters :
 
@@ -179,6 +183,11 @@ class VariantParameters :
         # Recovered Resistance (%, as a probability?)
         # NOT CURRENTLY USED
         self.recoveredResistance = 0.98
+
+        # approx from Dec 2020. Crude interpolation
+        #  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7721859/pdf/10654_2020_Article_698.pdf
+        self.infectionFatalityRateByAge=[0.00004,0.00004,0.00004,0.00068,0.023,0.0775,0.025,0.085,0.283]
+
     
 
 # Activity is a risk modifier. 1.0 is normal, 0.0 is safe, >1.0 is risky

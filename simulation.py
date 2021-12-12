@@ -220,7 +220,16 @@ class Simulation:
         for cnt in range(int(max(1,
                                  self.simulationParameters.startingInfectionRate * self.simulationParameters.populationSize))):
             idx = math.floor(random.random() * len(self.actors))
-            self.actors[idx].infect()
+
+            # Choose variants randomly according to starting mix
+            rnd = random.random()
+            for v, pct in self.simulationParameters.startingVariantMix.items():
+                rnd -= pct
+                if rnd <= 0:
+                    variant = self.simulationParameters.variantParameters[v]
+                    break
+            
+            self.actors[idx].infect(variant)
             self.totals.infected += 1
 
         # The remaining susceptible, after we've created the initially infected
@@ -245,7 +254,7 @@ class Simulation:
         if (infected.isolated):
             return False
 
-        if (random.random() < self.simulationParameters.variantParameters[infected.myInfection.variant].transmissionRate
+        if (random.random() < infected.myInfection.variant.transmissionRate
                 * infected.protection
                 * activity
                 * duration / 0.0104

@@ -4,7 +4,7 @@ from util import gaussianRandom
 
 class Infection:
 
-    def __init__(self, actor, variant = None):
+    def __init__(self, actor, variant):
         # The actor who is infected
         self.myActor = actor
 
@@ -16,39 +16,30 @@ class Infection:
         self.infectedTime = 0
         
         # Assign variant
-        if variant is not None:
-            self.variant = variant
-        else:
-            rnd = random.random()
-            for v, pct in self.myActor.simulationParameters.startingVariantMix.items():
-                rnd -= pct
-                if rnd <= 0:
-                    self.variant = v
-                    break
+        self.variant = variant
 
         # TODO: Sample these values in the future!
-        params = self.myActor.simulationParameters.variantParameters[self.variant]
 
         # Whether this infection will be asymptomatic. Sampled for this actor.
-        self.asymptomatic = (random.random() < params.asymptomaticRate)
+        self.asymptomatic = (random.random() < variant.asymptomaticRate)
         # The days until contagious. Sampled for this actor.
-        self.daysToContagious = gaussianRandom(params.daysToContagious, params.daysToContagiousSTD)
+        self.daysToContagious = gaussianRandom(variant.daysToContagious, variant.daysToContagiousSTD)
         self.daysToNotContagious = self.daysToContagious + gaussianRandom(
-            params.daysToRecovery - params.daysToContagious, params.daysToRecoverySTD)
+            variant.daysToRecovery - variant.daysToContagious, variant.daysToRecoverySTD)
         # If symptomatic, the days until symptomatic. Sampled for this actor.
-        self.daysToSymptomatic = gaussianRandom(params.daysToSymptoms, params.daysToSymptomsSTD)
-        self.daysToNotSymptomatic = self.daysToSymptomatic + gaussianRandom(params.daysToRecovery,
-                                                                            params.daysToRecoverySTD)
+        self.daysToSymptomatic = gaussianRandom(variant.daysToSymptoms, variant.daysToSymptomsSTD)
+        self.daysToNotSymptomatic = self.daysToSymptomatic + gaussianRandom(variant.daysToRecovery,
+                                                                            variant.daysToRecoverySTD)
         # days_to_pcr detectable. Sampled for this actor.
-        self.daysToPcrDetectable = gaussianRandom(params.daysToPcrDetectable, params.daysToPcrDetectableSTD)
-        self.daysToPcrNotDetectable = self.daysToPcrDetectable + gaussianRandom(params.durationDaysOfPcrDetection,
-                                                                                params.durationDaysOfPcrDetectionSTD)
+        self.daysToPcrDetectable = gaussianRandom(variant.daysToPcrDetectable, variant.daysToPcrDetectableSTD)
+        self.daysToPcrNotDetectable = self.daysToPcrDetectable + gaussianRandom(variant.durationDaysOfPcrDetection,
+                                                                                variant.durationDaysOfPcrDetectionSTD)
         # days until the rapid test will detect. Sampled for this actor.
         # this assures that the sampled daysToAntigenDetectible is after the sampled daysToPcrDetectible
         self.daysToAntigenDetectable = self.daysToPcrDetectable + gaussianRandom(
-            params.daysToAntigenDetectable - params.daysToPcrDetectable, params.daysToAntigenDetectableSTD)
+            variant.daysToAntigenDetectable - variant.daysToPcrDetectable, variant.daysToAntigenDetectableSTD)
         self.daysToAntigenNotDetectable = self.daysToAntigenDetectable + gaussianRandom(
-            params.durationDaysOfAntigenDetection, params.durationDaysOfAntigenDetectionSTD)
+            variant.durationDaysOfAntigenDetection, variant.durationDaysOfAntigenDetectionSTD)
 
     def tick(self, days=1.0):
         self.infectedTime += days

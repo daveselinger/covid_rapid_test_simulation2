@@ -216,7 +216,7 @@ class Actor:
         if (self.vaccinationRemain > 0):
             self.vaccinationRemain -= days
 
-        # This can only happen once.
-        if (self.vaccinationRemain <= 0):
-            if (random.random() < self.simulationParameters.vaccinationEfficacy):
-                self.isVaccinatedProtected = True
+            # This can only happen once.
+            if (self.vaccinationRemain <= 0):
+                if (random.random() < self.simulationParameters.vaccinationEfficacy):
+                    self.isVaccinatedProtected = True

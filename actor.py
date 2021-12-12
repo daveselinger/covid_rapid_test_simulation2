@@ -100,6 +100,10 @@ class Actor:
         # Is actor part of the Pcr routine testing program
         self.isTestingPcr = False
 
+        # The age of the actor (brackets)
+        self.ageBracket = 0 
+
+        # currently active infection
         self.myInfection = None
 
     # Infect the individual. Starts as EXPOSED.
@@ -176,7 +180,7 @@ class Actor:
 
             elif (self.status == ACTOR_STATUS.INFECTIOUS):
                 if (not self.myInfection.isContagious()):
-                    if (random.random() < self.myInfection.variant.mortalityRate):
+                    if self.myInfection.isFatal:
                         self.status = ACTOR_STATUS.DECEASED
                     else:
                         self.status = ACTOR_STATUS.RECOVERED
@@ -214,4 +218,3 @@ class Actor:
             if (self.vaccinationRemain <= 0):
                 if (random.random() < self.simulationParameters.vaccinationEfficacy):
                     self.isVaccinatedProtected = True
-        random.random() < self.simulationParameters.vaccinationEfficacy

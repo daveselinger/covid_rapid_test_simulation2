@@ -240,7 +240,7 @@ class Simulation:
                     variant = self.simulationParameters.variantParameters[v]
                     break
             
-            self.actors[idx].infect(variant)
+            self.actors[idx].infect(variant, -1)    # Initial exposures get dummy ID of -1
             self.totals.infected += 1
 
         # The remaining susceptible, after we've created the initially infected
@@ -270,7 +270,6 @@ class Simulation:
                 * activity
                 * duration / 0.0104
         ):
-            susceptible.infect(infected.myInfection.variant)
             return True
 
         return False
@@ -310,14 +309,12 @@ class Simulation:
     def checkExposure(self, actor, other, duration=0.0104, activity=ACTIVITY.NORMAL):
         if (self.hasBeenExposed(other, actor)):
             # print((actor.id, 'infects', other.id)
-            # TODO:  Has the infection already been performed by hasBeenExposed()?
-            other.infect(actor.myInfection.variant)
+            other.infect(actor.myInfection.variant, actor.id)
             return True
 
         if (self.hasBeenExposed(actor, other)):
             # print((other.id, 'infects', actor.id)
-            # TODO:  Has the infection already been performed by hasBeenExposed()?
-            actor.infect(other.myInfection.variant)
+            actor.infect(other.myInfection.variant, other.id)
             return True
 
         return False

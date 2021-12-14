@@ -19,6 +19,14 @@ class ACTOR_PROTECTION:
     NONE= 1.0
     MASK= 0.1
 
+@dataclass
+class InfectionRecord:
+# Small record to log past infection(s)
+    from_id: int
+    to_id: int
+    variant_name: str
+    time: int
+
 class Actor:
 
     def __init__(self, simulation):
@@ -105,16 +113,22 @@ class Actor:
 
         # currently active infection
         self.myInfection = None
+        
+        # list of infections
+        self.infections = []
 
     # Infect the individual. Starts as EXPOSED.
 
-    def infect(self, variant):
+    def infect(self, variant, exposer_id):
         self.myInfection = Infection(self, variant)
 
         self.infectedTime = 0
         self.status = ACTOR_STATUS.EXPOSED
         self.isAsymptomatic = random.random() < variant.asymptomaticRate
         self.willSelfIsolate = random.random() < variant.selfIsolationRate
+        
+        # Log infection record
+        self.infections.append(InfectionRecord(exposer_id, self.id, variant.name, self.simulation.simClock))
 
     def vaccinate(self):
         self.isVaccinated = True

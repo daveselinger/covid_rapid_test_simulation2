@@ -41,7 +41,7 @@ class Infection:
         self.daysToAntigenNotDetectable = self.daysToAntigenDetectable + gaussianRandom(
             variant.durationDaysOfAntigenDetection, variant.durationDaysOfAntigenDetectionSTD)
 
-        self.isFatal = (random.random() < params.infectionFatalityRateByAge[self.myActor.ageBracket])
+        self.isFatal = (random.random() < variant.infectionFatalityRateByAge[self.myActor.ageBracket])
 
     def tick(self, days=1.0):
         self.infectedTime += days

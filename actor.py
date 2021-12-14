@@ -14,10 +14,17 @@ class ACTOR_STATUS (Enum):
     DECEASED=    4
 
 # Protection is 1.0 for no protection, 0 for full protection
-@dataclass
 class ACTOR_PROTECTION:
     NONE= 1.0
     MASK= 0.1
+
+@dataclass
+class InfectionRecord:
+# Small record to log past infection(s)
+    from_id: int
+    to_id: int
+    variant_name: str
+    time: int
 
 class Actor:
 
@@ -80,7 +87,9 @@ class Actor:
         self.isVaccinated = False
 
         # actor has vaccine protection.
-        self.isVaccinatedProtected = False
+        self.isVaccinatedProtected = {}
+        for v in self.simulationParameters.variantParameters:
+            self.isVaccinatedProtected[v] = False
 
         # Whether or not this actor will self-isolate when symptoms appear.
         self.willSelfIsolate = True
@@ -105,18 +114,22 @@ class Actor:
 
         # currently active infection
         self.myInfection = None
+        
+        # list of infections
+        self.infections = []
 
     # Infect the individual. Starts as EXPOSED.
 
-    def infect(self, variant = None):
-        self.myInfection = Infection(self, variant = variant)
-        if variant is None:
-            variant = self.myInfection.variant
+    def infect(self, variant, exposer_id):
+        self.myInfection = Infection(self, variant)
 
         self.infectedTime = 0
         self.status = ACTOR_STATUS.EXPOSED
-        self.isAsymptomatic = random.random() < self.simulationParameters.variantParameters[variant].asymptomaticRate
-        self.willSelfIsolate = random.random() < self.simulationParameters.variantParameters[variant].selfIsolationRate
+        self.isAsymptomatic = random.random() < variant.asymptomaticRate
+        self.willSelfIsolate = random.random() < variant.selfIsolationRate
+        
+        # Log infection record
+        self.infections.append(InfectionRecord(exposer_id, self.id, variant.name, self.simulation.simClock))
 
     def vaccinate(self):
         self.isVaccinated = True
@@ -218,5 +231,6 @@ class Actor:
 
             # This can only happen once.
             if (self.vaccinationRemain <= 0):
-                if (random.random() < self.simulationParameters.vaccinationEfficacy):
-                    self.isVaccinatedProtected = True
+                for name, variant in self.simulationParameters.variantParameters.items():
+                    if (random.random() < variant.vaccinationEfficacy):
+                        self.isVaccinatedProtected[name] = True

@@ -14,7 +14,6 @@ class ACTOR_STATUS (Enum):
     DECEASED=    4
 
 # Protection is 1.0 for no protection, 0 for full protection
-@dataclass
 class ACTOR_PROTECTION:
     NONE= 1.0
     MASK= 0.1
@@ -88,7 +87,9 @@ class Actor:
         self.isVaccinated = False
 
         # actor has vaccine protection.
-        self.isVaccinatedProtected = False
+        self.isVaccinatedProtected = {}
+        for v in self.simulationParameters.variantParameters:
+            self.isVaccinatedProtected[v] = False
 
         # Whether or not this actor will self-isolate when symptoms appear.
         self.willSelfIsolate = True
@@ -230,5 +231,6 @@ class Actor:
 
             # This can only happen once.
             if (self.vaccinationRemain <= 0):
-                if (random.random() < self.simulationParameters.vaccinationEfficacy):
-                    self.isVaccinatedProtected = True
+                for name, variant in self.simulationParameters.variantParameters.items():
+                    if (random.random() < variant.vaccinationEfficacy):
+                        self.isVaccinatedProtected[name] = True

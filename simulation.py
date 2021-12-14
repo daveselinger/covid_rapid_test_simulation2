@@ -45,9 +45,6 @@ class SimulationParameters :
     # Vaccination delay
     vaccinationDelay = 28
 
-    # Vaccination effectiveness
-    vaccinationEfficacy = 0.95
-
     # Non compliance rate
     # TODO: This parameter is sampled and assigned to actors, but never actively used
     nonCompliantRate = 0.0
@@ -188,16 +185,19 @@ class VariantParameters :
         #  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7721859/pdf/10654_2020_Article_698.pdf
         self.infectionFatalityRateByAge=[0.00004,0.00004,0.00004,0.00068,0.023,0.0775,0.025,0.085,0.283]
 
+        ###  Vaccination Parameters  ##########################################################
+
+        # Vaccination effectiveness
+        self.vaccinationEfficacy = 0.95
+        
     
 
 # Activity is a risk modifier. 1.0 is normal, 0.0 is safe, >1.0 is risky
-@dataclass
 class ACTIVITY:
     NORMAL= 1.0
     SAFE=   0.1
 
 
-@dataclass
 class RunStatistics:
     susceptible = 0
     infected = 0
@@ -259,7 +259,7 @@ class Simulation:
         ):
             return False
 
-        if (susceptible.isVaccinatedProtected):
+        if (susceptible.isVaccinatedProtected[infected.myInfection.variant.name]):
             return False
 
         if (infected.isolated):

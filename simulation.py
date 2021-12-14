@@ -212,7 +212,7 @@ class Simulation:
         self.simulationParameters = simulationParameters
         self.actors = []
         self.totals = RunStatistics()
-        self.daysElapsed = 0
+        self.simClock = 0
 
         rows = math.floor(math.sqrt(self.simulationParameters.populationSize))
         for i in range(self.simulationParameters.populationSize):
@@ -277,7 +277,7 @@ class Simulation:
     # Handles the disease progression in all actors
 
     def tickDisease(self, days=1):
-        self.daysElapsed += days
+        self.simClock += days
 
         newTotals = RunStatistics()
 

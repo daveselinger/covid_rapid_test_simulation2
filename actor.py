@@ -80,16 +80,12 @@ class Actor:
         # Whether or not this actor is showing symptoms or not.
         self.isSymptomatic = False
 
-        # Number of days remaining from vaccination to protection.
-        self.vaccinationRemain = 0
-
         # actor has been  vaccinated.
         self.isVaccinated = False
-
-        # actor has vaccine protection.
-        self.isVaccinatedProtected = {}
-        for v in self.simulationParameters.variantParameters:
-            self.isVaccinatedProtected[v] = False
+        # Number of days from vaccination to full level of protection
+        self.vaccinationDelay = 0
+        # Global time when vaccinated
+        self.vaccinationClock = float('-inf')
 
         # Whether or not this actor will self-isolate when symptoms appear.
         self.willSelfIsolate = True
@@ -133,7 +129,30 @@ class Actor:
 
     def vaccinate(self):
         self.isVaccinated = True
-        self.vaccinationRemain = gaussianRandom(self.simulationParameters.vaccinationDelay)
+        self.vaccinationClock = self.simulation.simClock
+        self.vaccinationDelay = gaussianRandom(self.simulationParameters.vaccinationDelay)
+        
+    def vaccinationProtection(self, variant):
+        ''' vaccinationProtection() returns a multiplier of exposure risk
+            A return value of 1.0 means no protection
+            A return value of 0.5 means half as likely to get infected
+        '''
+        
+        # TODO: implement waning efficacy over time
+        if self.isVaccinated == False:
+            # Unvaccinated, so no protection
+            return 1.0
+        elif (self.isVaccinated == True) and (self.vaccinationClock + self.vaccinationDelay > self.simulation.simClock):
+            # Not yet fully vaccinated
+            # TODO:  Current behaviro is no protection, but could model a ramp up
+            return 1.0
+        else:
+            # Fully vaccinated, so return the protection to the exposure variant
+            full = self.simulationParameters.variantParameters[variant].vaccinationEfficacy
+            current = full
+            # TODO:  Model waning behavior.  Need a reasonable curve.  Sample code below is exponential decay.
+            # current = full * 0.999 ** (self.simulation.simClock - self.vaccinationClock - self.vaccinationDelay)
+            return 1.0 - current
 
     # Perform rapid test on actor
 
@@ -225,12 +244,3 @@ class Actor:
 
         if (self.testTimePcr is not None):
             self.testTimePcr += days
-
-        if (self.vaccinationRemain > 0):
-            self.vaccinationRemain -= days
-
-            # This can only happen once.
-            if (self.vaccinationRemain <= 0):
-                for name, variant in self.simulationParameters.variantParameters.items():
-                    if (random.random() < variant.vaccinationEfficacy):
-                        self.isVaccinatedProtected[name] = True

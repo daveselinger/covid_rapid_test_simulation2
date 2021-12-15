@@ -253,14 +253,12 @@ class Simulation:
         ):
             return False
 
-        if (susceptible.isVaccinatedProtected[infected.myInfection.variant.name]):
-            return False
-
         if (infected.isolated):
             return False
 
         if (random.random() < infected.myInfection.variant.transmissionRate
                 * infected.protection
+                * susceptible.vaccinationProtection(infected.myInfection.variant.name)
                 * activity
                 * duration / 0.0104
         ):

@@ -232,14 +232,8 @@ class Simulation:
                                  self.simulationParameters.startingInfectionRate * self.simulationParameters.populationSize))):
             idx = math.floor(random.random() * len(self.actors))
 
-            # Choose variants randomly according to starting mix
-            rnd = random.random()
-            for v, pct in self.simulationParameters.startingVariantMix.items():
-                rnd -= pct
-                if rnd <= 0:
-                    variant = self.simulationParameters.variantParameters[v]
-                    break
-            
+            # Choose variant randomly according to starting mix
+            variant = random.choices(list(self.simulationParameters.variantParameters.values()), list(self.simulationParameters.startingVariantMix.values()))[0]
             self.actors[idx].infect(variant, -1)    # Initial exposures get dummy ID of -1
             self.totals.infected += 1
 
@@ -277,8 +271,6 @@ class Simulation:
     # Handles the disease progression in all actors
 
     def tickDisease(self, days=1):
-        self.simClock += days
-
         newTotals = RunStatistics()
 
         # This handles disease progression
@@ -340,6 +332,8 @@ class Simulation:
     #   This base model just picks random actors to infect
 
     def tick(self, days=1):
+        self.simClock += days
+
         self.tickInteractions(days)
         self.tickRapidTesting(days)
         self.tickPcrTesting(days)

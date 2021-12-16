@@ -154,6 +154,27 @@ class Actor:
             # current = full * 0.999 ** (self.simulation.simClock - self.vaccinationClock - self.vaccinationDelay)
             return 1.0 - current
 
+        
+    def reinfectionProtection(self, variant):
+        ''' reinfectionProtection() returns a multiplier of exposure risk
+            A return value of 1.0 means no protection
+            A return value of 0.5 means half as likely to get infected
+        '''
+        
+        # TODO: implement waning efficacy over time
+        if len(self.infections) == 0:
+            # Never infected, so no protection
+            #print('*')
+            return 1.0
+        else:
+            # Previously infected, so return the max of the reinfection protections of previous variants against the new variant
+            efficacies = []
+            for i in self.infections:
+                efficacies.append(self.simulationParameters.variantParameters[i.variant_name].recoveredResistance[variant])
+            # TODO:  Model waning behavior.  Need a reasonable curve.
+            # Can use (self.simulation.simClock - i.time), which is the number of days since infection i
+            return 1.0 - max(efficacies)
+
     # Perform rapid test on actor
 
     def rapidTest(self):

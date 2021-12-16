@@ -124,6 +124,8 @@ class SimulationParameters :
         # Customize the parameters for the different variants
         self.variantParameters['alpha'].transmissionRate /= 2
         self.variantParameters['omicron'].transmissionRate *= 2
+        self.variantParameters['delta'].recoveredResistance['delta'] = 0.95
+        self.variantParameters['omicron'].recoveredResistance['omicron'] = 0.95
 
 
 
@@ -178,8 +180,7 @@ class VariantParameters :
         self.durationDaysOfAntigenDetectionSTD = 3
 
         # Recovered Resistance (%, as a probability?)
-        # NOT CURRENTLY USED
-        self.recoveredResistance = 0.98
+        self.recoveredResistance = {'alpha': 0.95, 'beta': 0.95, 'delta': 0.9, 'omicron': 0.8}
 
         # approx from Dec 2020. Crude interpolation
         #  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7721859/pdf/10654_2020_Article_698.pdf
@@ -249,7 +250,7 @@ class Simulation:
 
     def hasBeenExposed(self, susceptible, infected, duration=0.0104, activity=ACTIVITY.NORMAL):
         if (infected.status != ACTOR_STATUS.INFECTIOUS
-                or susceptible.status != ACTOR_STATUS.SUSCEPTIBLE
+                or (susceptible.status != ACTOR_STATUS.SUSCEPTIBLE and susceptible.status != ACTOR_STATUS.RECOVERED)
         ):
             return False
 
@@ -259,6 +260,7 @@ class Simulation:
         if (random.random() < infected.myInfection.variant.transmissionRate
                 * infected.protection
                 * susceptible.vaccinationProtection(infected.myInfection.variant.name)
+                * susceptible.reinfectionProtection(infected.myInfection.variant.name)
                 * activity
                 * duration / 0.0104
         ):

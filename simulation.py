@@ -3,6 +3,7 @@ import math
 import random
 from actor import Actor, ACTOR_STATUS
 from util import gaussianRandom
+import pandas as pd
 
 
 #Demographics
@@ -392,3 +393,15 @@ class Simulation:
             if (not actor.isVaccinated and
                     random.random() < self.simulationParameters.vaccinationRate * days):
                 actor.vaccinate()
+                
+    def infectionsDF(self):
+        '''Return a pandas dataframe with the infection spread data'''
+        vars = []
+        for a in self.actors:
+            for i in a.infections:
+                vars.append((i.from_id, i.to_id, i.variant_name, i.time))
+
+        df = pd.DataFrame(vars, columns=['from_id', 'to_id', 'variant_name', 'time'])
+        df.sort_values(['time','from_id'], inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        return df

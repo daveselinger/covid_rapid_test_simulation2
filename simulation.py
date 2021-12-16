@@ -124,6 +124,8 @@ class SimulationParameters :
         # Customize the parameters for the different variants
         self.variantParameters['alpha'].transmissionRate /= 2
         self.variantParameters['omicron'].transmissionRate *= 2
+        self.variantParameters['delta'].recoveredResistance['delta'] = 0.95
+        self.variantParameters['omicron'].recoveredResistance['omicron'] = 0.95
 
 
 
@@ -178,8 +180,7 @@ class VariantParameters :
         self.durationDaysOfAntigenDetectionSTD = 3
 
         # Recovered Resistance (%, as a probability?)
-        # NOT CURRENTLY USED
-        self.recoveredResistance = 0.98
+        self.recoveredResistance = {'alpha': 0.95, 'beta': 0.95, 'delta': 0.9, 'omicron': 0.8}
 
         # approx from Dec 2020. Crude interpolation
         #  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7721859/pdf/10654_2020_Article_698.pdf
@@ -232,14 +233,8 @@ class Simulation:
                                  self.simulationParameters.startingInfectionRate * self.simulationParameters.populationSize))):
             idx = math.floor(random.random() * len(self.actors))
 
-            # Choose variants randomly according to starting mix
-            rnd = random.random()
-            for v, pct in self.simulationParameters.startingVariantMix.items():
-                rnd -= pct
-                if rnd <= 0:
-                    variant = self.simulationParameters.variantParameters[v]
-                    break
-            
+            # Choose variant randomly according to starting mix
+            variant = random.choices(list(self.simulationParameters.variantParameters.values()), list(self.simulationParameters.startingVariantMix.values()))[0]
             self.actors[idx].infect(variant, -1)    # Initial exposures get dummy ID of -1
             self.totals.infected += 1
 
@@ -255,11 +250,8 @@ class Simulation:
 
     def hasBeenExposed(self, susceptible, infected, duration=0.0104, activity=ACTIVITY.NORMAL):
         if (infected.status != ACTOR_STATUS.INFECTIOUS
-                or susceptible.status != ACTOR_STATUS.SUSCEPTIBLE
+                or (susceptible.status != ACTOR_STATUS.SUSCEPTIBLE and susceptible.status != ACTOR_STATUS.RECOVERED)
         ):
-            return False
-
-        if (susceptible.isVaccinatedProtected[infected.myInfection.variant.name]):
             return False
 
         if (infected.isolated):
@@ -267,6 +259,8 @@ class Simulation:
 
         if (random.random() < infected.myInfection.variant.transmissionRate
                 * infected.protection
+                * susceptible.vaccinationProtection(infected.myInfection.variant.name)
+                * susceptible.reinfectionProtection(infected.myInfection.variant.name)
                 * activity
                 * duration / 0.0104
         ):
@@ -277,8 +271,6 @@ class Simulation:
     # Handles the disease progression in all actors
 
     def tickDisease(self, days=1):
-        self.simClock += days
-
         newTotals = RunStatistics()
 
         # This handles disease progression
@@ -340,6 +332,8 @@ class Simulation:
     #   This base model just picks random actors to infect
 
     def tick(self, days=1):
+        self.simClock += days
+
         self.tickInteractions(days)
         self.tickRapidTesting(days)
         self.tickPcrTesting(days)

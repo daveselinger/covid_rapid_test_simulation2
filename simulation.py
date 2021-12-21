@@ -33,10 +33,6 @@ class SimulationParameters :
     # Starting recovered rate
     # A list with one tuple per variant.  Each tuple has variant, rate (float 0-1), mean days ago, std dev days ago.
     startingRecoveredList = [('beta',0.0010,510, 60), ('delta',0.0020,180,60)]
-    
-    # Mean/STD of # of interactions per day
-    numInteractions = 2.5
-    numInteractionsSTD = 1.0
 
     # % of positives that will quarantine effectively (after positive test).
     positiveQuarantineRate = 0.9
@@ -64,7 +60,17 @@ class SimulationParameters :
     #
 
     ###  Interation Parameters  ##########################################################
+    
+    # Mean/STD of # of interactions per day
+    numInteractions = 2.5
+    numInteractionsSTD = 1.0
 
+    # Rate of actors interacting with people external to the simulation (Float, 0-1)
+    externalInteractionRate = 0.05
+    
+    # Rate at which external people are infected
+    externalBaseInfected  = 0.01
+    
     # TODO: Contact tracing parameters go here
 
     ###  Infection Parameters  ##########################################################
@@ -279,19 +285,27 @@ class Simulation:
     #
     # TODO: model full viral load dynamics and exposure duration
 
-    def hasBeenExposed(self, susceptible, infected, duration=0.0104, activity=ACTIVITY.NORMAL):
-        if (infected.status != ACTOR_STATUS.INFECTIOUS
+    def hasBeenExposed(self, susceptible, infected=None, duration=0.0104, activity=ACTIVITY.NORMAL, variant=None):
+        if (((infected is not None) and (infected.status != ACTOR_STATUS.INFECTIOUS))
                 or (susceptible.status != ACTOR_STATUS.SUSCEPTIBLE and susceptible.status != ACTOR_STATUS.RECOVERED)
         ):
             return False
 
-        if (infected.isolated):
+        if ((infected is not None) and (infected.isolated)):
             return False
+            
+        if infected is None:
+            infected_protection = 1.0
+        else:
+            infected_protection = infected.protection
+            
+        if variant is None:
+            variant = infected.myInfection.variant
 
-        if (random.random() < infected.myInfection.variant.transmissionRate
-                * infected.protection
-                * susceptible.vaccinationProtection(infected.myInfection.variant.name)
-                * susceptible.reinfectionProtection(infected.myInfection.variant.name)
+        if (random.random() < variant.transmissionRate
+                * infected_protection
+                * susceptible.vaccinationProtection(variant.name)
+                * susceptible.reinfectionProtection(variant.name)
                 * activity
                 * duration / 0.0104
         ):
@@ -342,6 +356,17 @@ class Simulation:
 
         return False
 
+    def externalInteraction(self):
+        ''' Helper function to determine external interactions 
+            If desired, both rate and variants could vary over time
+        '''
+        external_infected_rate = self.simulationParameters.externalBaseInfected    # This rate could vary with time using self.simClock
+        if random.random() < self.simulationParameters.externalInteractionRate * external_infected_rate:
+            # The variant weighting could vary with time
+            variant = random.choices(list(self.simulationParameters.variantParameters.values()), list(self.simulationParameters.startingVariantMix.values()))[0]
+            return True, variant
+        return False, None
+    
     #  Generate daily interactions based on simulation parameters.
     #  This is not used if interactions are based on collision detection.
 
@@ -357,6 +382,12 @@ class Simulation:
                     encounter_list = random.sample(range(len(self.actors)), int(interactions))
                     for idx in encounter_list:
                         self.checkExposure(self.actors[idx], actor)
+            elif ((actor.status == ACTOR_STATUS.SUSCEPTIBLE) or (actor.status == ACTOR_STATUS.SUSCEPTIBLE)) and (not actor.isolated):
+                # Determine if actor with have an encounter with an external source of infection
+                interacts, variant = self.externalInteraction()
+                # If we've had an external encounter, use hasBeenExposed() to check for transmission
+                if interacts and self.hasBeenExposed(actor, variant=variant):
+                    actor.infect(variant, -1)    # External exposures get dummy ID of -1
 
     #   This is the outer tick. To be overriden by subclasses.
     #   Should implement policies such as social distancing,

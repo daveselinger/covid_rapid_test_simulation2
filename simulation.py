@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import math
 import random
-from actor import Actor, ACTOR_STATUS
+from actor import Actor, ACTOR_STATUS, InfectionRecord
 from util import gaussianRandom
+import pandas as pd
 
 
 #Demographics
@@ -29,6 +30,10 @@ class SimulationParameters :
     # Starting infected rate (Float, 0-1)
     startingInfectionRate = 0.004
 
+    # Starting recovered rate
+    # A list with one tuple per variant.  Each tuple has variant, rate (float 0-1), mean days ago, std dev days ago.
+    startingRecoveredList = [('beta',0.0010,510, 60), ('delta',0.0020,180,60)]
+    
     # Mean/STD of # of interactions per day
     numInteractions = 2.5
     numInteractionsSTD = 1.0
@@ -39,6 +44,11 @@ class SimulationParameters :
     # isolation after positive test or self isolation
     positiveTestIsolationInterval = 21
 
+    # Starting vaccinated rate (Float, 0-1)
+    startingVaccinationRate = 0.600
+    # Mean/STD of how long ago these were vaccinated (in days)
+    vaccinationMean = 240
+    vaccinationSTD = 60
     # Daily Vacination rate
     vaccinationRate = 0.0035
 
@@ -228,18 +238,39 @@ class Simulation:
                 self.simulationParameters.ageBrackets)[0]
             self.actors.append(a)
 
-        # Initial exposed subpopulation
-        for cnt in range(int(max(1,
-                                 self.simulationParameters.startingInfectionRate * self.simulationParameters.populationSize))):
-            idx = math.floor(random.random() * len(self.actors))
-
-            # Choose variant randomly according to starting mix
+        # Initial infected subpopulation
+        exposed_list = random.sample(range(len(self.actors)), 
+                                     int(max(1, self.simulationParameters.startingInfectionRate * self.simulationParameters.populationSize)))
+        for idx in exposed_list:
+           # Choose variant randomly according to starting mix
             variant = random.choices(list(self.simulationParameters.variantParameters.values()), list(self.simulationParameters.startingVariantMix.values()))[0]
             self.actors[idx].infect(variant, -1)    # Initial exposures get dummy ID of -1
             self.totals.infected += 1
 
+        # Initial recovered subpopulation
+        for variant, startingRecoveredRate, recoveredDaysMean, recoveredDaysSTD in self.simulationParameters.startingRecoveredList:
+            recovered_list = random.sample(range(len(self.actors)), 
+                                           int(max(1, startingRecoveredRate * self.simulationParameters.populationSize)))
+            for idx in recovered_list:
+                recoveredDays = 0 - gaussianRandom(recoveredDaysMean, recoveredDaysSTD)
+                if recoveredDays > -2:
+                    recoveredDays = -2
+                self.actors[idx].infections.append(InfectionRecord(-1, idx, variant, recoveredDays))
+                self.totals.recovered += 1
+
+        # Initial vaccinated subpopulation
+        # TODO:  Currently these are random and independent of the starting infected population.  Maybe they should be negatively correlated.
+        vaccinated_list = random.sample(range(len(self.actors)), 
+                                        int(max(1, self.simulationParameters.startingVaccinationRate * self.simulationParameters.populationSize)))
+        for idx in vaccinated_list:
+            vaccinatedDays = gaussianRandom(self.simulationParameters.vaccinationMean, 
+                                            self.simulationParameters.vaccinationSTD)
+            if vaccinatedDays < 2:
+                vaccinatedDays = 2
+            self.actors[idx].vaccinate(vaccinatedDays)
+
         # The remaining susceptible, after we've created the initially infected
-        self.totals.susceptible = self.simulationParameters.populationSize - self.totals.infected
+        self.totals.susceptible = self.simulationParameters.populationSize - self.totals.infected - self.totals.recovered
         
     # *
     # Models transmission from an infected individual to a susceptible
@@ -319,12 +350,13 @@ class Simulation:
             if (actor.status == ACTOR_STATUS.INFECTIOUS and not actor.isolated):
                 # Determine if we infect based on # of interactions and % of day passed
                 if (random.random() < days):
-                    interactions = gaussianRandom(self.simulationParameters.numInteractions,
-                                                  self.simulationParameters.numInteractionsSTD)
-                    for encounter in range(int(interactions)):
-                        # Pick a random nearby actor to expose
-                        other = self.actors[math.floor(random.random() * len(self.actors))]
-                        self.checkExposure(other, actor)
+                    interactions = int(gaussianRandom(self.simulationParameters.numInteractions,
+                                                  self.simulationParameters.numInteractionsSTD))
+                    if interactions < 0:
+                        interactions = 0
+                    encounter_list = random.sample(range(len(self.actors)), int(interactions))
+                    for idx in encounter_list:
+                        self.checkExposure(self.actors[idx], actor)
 
     #   This is the outer tick. To be overriden by subclasses.
     #   Should implement policies such as social distancing,
@@ -392,3 +424,15 @@ class Simulation:
             if (not actor.isVaccinated and
                     random.random() < self.simulationParameters.vaccinationRate * days):
                 actor.vaccinate()
+                
+    def infectionsDF(self):
+        '''Return a pandas dataframe with the infection spread data'''
+        vars = []
+        for a in self.actors:
+            for i in a.infections:
+                vars.append((i.from_id, i.to_id, i.variant_name, i.time))
+
+        df = pd.DataFrame(vars, columns=['from_id', 'to_id', 'variant_name', 'time'])
+        df.sort_values(['time','from_id'], inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        return df

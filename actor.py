@@ -127,9 +127,12 @@ class Actor:
         # Log infection record
         self.infections.append(InfectionRecord(exposer_id, self.id, variant.name, self.simulation.simClock))
 
-    def vaccinate(self):
+    def vaccinate(self, days_ago = None):
         self.isVaccinated = True
-        self.vaccinationClock = self.simulation.simClock
+        if days_ago is None:
+            self.vaccinationClock = self.simulation.simClock
+        else:
+            self.vaccinationClock = self.simulation.simClock - days_ago
         self.vaccinationDelay = gaussianRandom(self.simulationParameters.vaccinationDelay)
         
     def vaccinationProtection(self, variant):
